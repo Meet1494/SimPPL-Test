@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Trends Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script> 
+    <style>
+        body {
+            background-color: #1a1a2e;
+            color: #e0e0ff;
+            font-family: Arial, sans-serif;
+        }
+        .sidebar {
+            height: 100vh;
+            background: linear-gradient(180deg, #3a0ca3, #1a1a2e);
+            color: white;
+            padding: 20px;
+            position: fixed;
+            width: 250px;
+        }
+        .content {
+            margin-left: 270px;
+            padding: 20px;
+            position: relative;
+        }
+        .card {
+            background-color: #322653;
+            border: none;
+            color: white;
+            transition: transform 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: scale(1.05);
+        }
+        .nav-link {
+            color: #e0e0ff !important;
+            font-weight: bold;
+        }
+        .nav-link:hover {
+            color: #ff9ff3 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Dashboard</h2>
+        <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link" href="#" onclick="loadChart('time_series')">📅Posts per month </a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="loadChart('top_communities')">🌍Top Communities</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="loadChart('title_wordcloud')">🔠Title Wordcloud</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="loadChart('selftext_wordcloud')">📝Text Wordcloud</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="loadChart('word_frequencies')">🔢Word Frequencies</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1 class="mb-4 text-center">Social Media Trends Analysis</h1>
+        <p class="text-center">Explore the latest trends and insights from social media platforms.</p>
+        <p class="text-center">Visualize data-driven analytics for a better understanding of online conversations.</p>
+        <p class="text-center">Engage with real-time updates and discover emerging topics.</p>
+        <p class="text-center">Choose any of the option on the sidebar to view analytics on social media trends.</p>
+        <p class="text-center">In the wordclouds the words which are enlarged and bold represent they have been repeated the most number of times.</p>
+        <div id="chartContainer" class="row g-4">
+        </div>
+    </div>
+    
+    <script>
+       function loadChart(chartType) {
+    fetch(`http://127.0.0.1:5000/plot/${chartType}`)
+        .then(response => {
+            const contentType = response.headers.get("content-type");
+            
+            if (contentType && contentType.includes("application/json")) {
+                return response.json().then(data => ({ type: "json", data }));
+            } else if (contentType && contentType.includes("image/png")) {
+                return response.blob().then(blob => ({ type: "image", blob }));
+            } else {
+                throw new Error("Unsupported response type");
+            }
+        })
+        .then(result => {
+            const chartContainer = document.getElementById('chartContainer');
+            chartContainer.innerHTML = `
+                <div class="col-md-12">
+                    <div class="card shadow-sm p-3">
+                        <div class="card-body">
+                            <h5 class="card-title text-center">${chartType.replace('_', ' ').toUpperCase()}</h5>
+                            <div id="chart"></div>
+                        </div>
+                    </div>
+                </div>`;
+
+            if (result.type === "json") {
+                Plotly.newPlot('chart', result.data);
+            } else if (result.type === "image") {
+                const imgUrl = URL.createObjectURL(result.blob);
+                document.getElementById('chart').innerHTML = `<img src="${imgUrl}" alt="${chartType}" class="img-fluid" />`;
+            }
+        })
+        .catch(error => console.error('Error loading chart:', error));
+}
+
+    </script>
+</body>
+</html>
